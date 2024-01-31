@@ -1,19 +1,62 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
+	_ "github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
-func main() {
-	router := gin.Default()                // Ginルーターの新しいインスタンスを作成。HTTPリクエストを処理するためのルートやミドルウェアの設定を管理する。
-	router.LoadHTMLGlob("template/*.html") // HTMLを読み込むディレクトリを指定
+type Todo struct {
+	gorm.Model
+	Text   string
+	States string
+}
 
-	data := "Hello Go/Gin!!"
-	// ルートURL（/）に対するGETリクエストを処理するためのハンドラーを設定。
-	// この関数は、リクエストが来た際に呼び出される。ここでは、ステータスコード200とともに index.html テンプレートをレンダリングする。
-	router.GET("/", func(ctx *gin.Context) {
-		ctx.HTML(200, "index.html", gin.H{"data": data}) // map型で値を渡しているよ👀
-	})
-	// サーバーを起動し、デフォルトのポート（8080）で待ち受けを開始する
-	router.Run()
+// DB初期化
+func dbInit() {
+	db, err := gorm.Open("sqlite3", "test.sqlite3")
+	if err != nil {
+		panic("データベース開けず！（dbInsert）")
+	}
+	db.AutoMigrate(&Todo{})
+	defer db.Close()
+}
+
+// CREATE(INSERT)
+func dbInsert(text string, states string) {
+	db, err := gorm.Open("sqlite3", "test.sqlite3")
+	if err != nil {
+		panic("データベース開けず！（dbInsert）")
+	}
+	db.Create(&Todo{Text: text, States: states})
+	defer db.Close()
+}
+
+// READ(SERECT)
+// DB全取得
+func dbGetAll() []Todo{
+	db, err:= gorm.Open("sqlite3","test.sqlite3")
+	if err != nil {
+		panic("データベース開けず！(dbGetAll())")
+	}
+	var todos []Todo
+	db.Order("created_at desc").Find(&todos)
+	db.Close()
+	return todos
+}
+
+// DBひとつ取得
+func dbGetOne(id int) Todo {
+	db, err := gorm.Open("sqlite3", "test.sqlite3")
+	if err != nil {
+		panic("データベース開けず！（dbGetOne）")
+	}
+	var todo Todo
+	db.First(&todo, id)
+	db.Close()
+	return todo
+}
+
 }
