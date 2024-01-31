@@ -41,10 +41,10 @@ func dbGetAll() []Todo{
 	if err != nil {
 		panic("データベース開けず！(dbGetAll())")
 	}
-	var todos []Todo
-	db.Order("created_at desc").Find(&todos)
-	db.Close()
-	return todos
+	var todos []Todo // 型のスライス（リスト）を宣言する
+	db.Order("created_at desc").Find(&todos) // created_at カラム（作成日時）の降順で並べ替える & Todoテーブルから全てのレコードを取得
+	db.Close() // DBを閉じる
+	return todos // 取得したTodoを返す
 }
 
 // DBひとつ取得
@@ -53,10 +53,10 @@ func dbGetOne(id int) Todo {
 	if err != nil {
 		panic("データベース開けず！（dbGetOne）")
 	}
-	var todo Todo
-	db.First(&todo, id)
-	db.Close()
-	return todo
+	var todo Todo // Todo型の変数を宣言
+	db.First(&todo, id) // データベースのTodoテーブルから、指定された id を持つ最初のレコードを取得
+	db.Close() // DBを閉じる
+	return todo // 取得したTodoを返す
 }
 
 }
