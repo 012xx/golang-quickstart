@@ -11,7 +11,7 @@ import (
 type Todo struct {
 	gorm.Model
 	Text   string
-	States string
+	Status string
 }
 
 // DB初期化
@@ -25,12 +25,12 @@ func dbInit() {
 }
 
 // CREATE(INSERT)
-func dbInsert(text string, states string) {
+func dbInsert(text string, status string) {
 	db, err := gorm.Open("sqlite3", "test.sqlite3")
 	if err != nil {
 		panic("データベース開けず！（dbInsert）")
 	}
-	db.Create(&Todo{Text: text, States: states})
+	db.Create(&Todo{Text: text, Status: status})
 	defer db.Close()
 }
 
@@ -60,17 +60,18 @@ func dbGetOne(id int) Todo {
 }
 
 // UPDATE
-func dbUpdate(id int, text string, states string) {
+func dbUpdate(id int, text string, status string) {
 	db, err := gorm.Open("sqlite3", "test.sqlite3")
 	if err != nil {
 		panic("データベース開けず！（dbUpdate）")
 	}
 	var todo Todo
-	db.First(&todo, id) // idを指定して、Todoを取得
-	todo.Text = text // 取得したTodoのテキストを上書き
-	todo.States = states // 取得したTodoのステータスを上書き
-	db.Save(&todo) // 取得したTodoを保存
-	db.Close() // DBを閉じる
+	db.First(&todo, id)  // idを指定して、Todoを取得
+	todo.Text = text     // 取得したTodoのテキストを上書き
+	todo.Status = status // 取得したTodoのステータスを上書き
+	db.Save(&todo)       // 取得したTodoを保存
+	db.Close()           // DBを閉じる
+}
 
 // DELETE
 func dbDelete(id int) {
@@ -80,8 +81,8 @@ func dbDelete(id int) {
 	}
 	var todo Todo
 	db.First(&todo, id) // idを指定して、Todoを取得
-	db.Delete(&todo) // 取得したTodoを削除
-	db.Close() // DBを閉じる
+	db.Delete(&todo)    // 取得したTodoを削除
+	db.Close()      // DBを閉じる
 	}
 
 }
