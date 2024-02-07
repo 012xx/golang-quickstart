@@ -59,4 +59,30 @@ func dbGetOne(id int) Todo {
 	return todo // 取得したTodoを返す
 }
 
+// UPDATE
+func dbUpdate(id int, text string, status string) {
+	db, err := gorm.Open("sqlite3","test.sqlite")
+	if err != nil {
+		panic("データベース開けず！(dbUpdate)")
+	}
+	var todo Todo // Todo型の変数を宣言
+	db.First(&todo, id) // データベースのTodoテーブルから、指定された id を持つ最初のレコードを取得
+	todo.Text = text // 中身を入れる
+	todo.States = status // 中身を入れる
+	db.Save(&todo) // DBの中身を保存する
+	db.Close()
+}
+
+// DELETE
+func dbDelete(id int){
+	db, err := gorm.Open("sqlite3","test.sqlite3")
+	if err != nil {
+		panic("データベース開けず！(dbDelete)")
+	}
+	var todo Todo
+	db.First(&todo, id)
+	db.Delete(&todo)
+	db.Close()
+}
+
 }
