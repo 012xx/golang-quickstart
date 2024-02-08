@@ -2,102 +2,148 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
-	"strconv"
-
-	_ "github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm"
-
 	_ "github.com/mattn/go-sqlite3"
+	"strconv"
 )
 
 type Todo struct {
 	gorm.Model
 	Text   string
-	States string
+	Status string
 }
 
 func main() {
 	router := gin.Default()
-	router.LoadHTMLGlob("template/*.html")
+	router.LoadHTMLGlob("templates/*.html")
 
 	dbInit()
 
 	// Index
-	router.GET("/")
+	router.GET("/", func(ctx *gin.Context) {
+		todos := dbGetAll()
+		ctx.HTML(200, "index.html", gin.H{
+			"todos": todos,
+		})
+	})
+
+	// Create
+	router.POST("/new", func(ctx *gin.Context) {
+		text := ctx.PostForm("text")
+		status := ctx.PostForm("status") // "states" を "status" に変更
+		dbInsert(text, status)
+		ctx.Redirect(302, "/")
+	})
+
+	// Detail
+	router.GET("/detail/:id", func(ctx *gin.Context) { // POST から GET に変更し、ルートを修正
+		n := ctx.Param("id")
+		id, err := strconv.Atoi(n)
+		if err != nil {
+			panic(err)
+		}
+		todo := dbGetOne(id)
+		ctx.HTML(200, "detail.html", gin.H{"todo": todo})
+	})
+
+	// Update
+	router.POST("/update/:id", func(ctx *gin.Context) {
+		n := ctx.Param("id")
+		id, err := strconv.Atoi(n)
+		if err != nil {
+			panic(err)
+		}
+		text := ctx.PostForm("text")
+		status := ctx.PostForm("status") // "states" を "status" に変更
+		dbUpdate(id, text, status)
+		ctx.Redirect(302, "/")
+	})
+
+	// Delete Confirmation
+	router.GET("/delete_check/:id", func(ctx *gin.Context) {
+		n := ctx.Param("id")
+		id, err := strconv.Atoi(n)
+		if err != nil {
+			panic(err)
+		}
+		todo := dbGetOne(id)
+		ctx.HTML(200, "delete.html", gin.H{"todo": todo})
+	})
+
+	// Delete
+	router.POST("/delete/:id", func(ctx *gin.Context) {
+		n := ctx.Param("id")
+		id, err := strconv.Atoi(n)
+		if err != nil {
+			panic(err)
+		}
+		dbDelete(id)
+		ctx.Redirect(302, "/")
+	})
+
+	router.Run()
 }
 
-// test
-
-// DB初期化
 func dbInit() {
 	db, err := gorm.Open("sqlite3", "test.sqlite3")
 	if err != nil {
-		panic("データベース開けず！（dbInsert）")
+		panic("データベース開けず！（dbInit）")
 	}
 	db.AutoMigrate(&Todo{})
 	defer db.Close()
 }
 
-// CREATE(INSERT)
-func dbInsert(text string, states string) {
+func dbInsert(text string, status string) {
 	db, err := gorm.Open("sqlite3", "test.sqlite3")
 	if err != nil {
 		panic("データベース開けず！（dbInsert）")
 	}
-	db.Create(&Todo{Text: text, States: states})
+	db.Create(&Todo{Text: text, Status: status})
 	defer db.Close()
 }
 
-// READ(SERECT)
-// DB全取得
-func dbGetAll() []Todo{
-	db, err:= gorm.Open("sqlite3","test.sqlite3")
+func dbGetAll() []Todo {
+	db, err := gorm.Open("sqlite3", "test.sqlite3")
 	if err != nil {
-		panic("データベース開けず！(dbGetAll())")
+		panic("データベース開けず！（dbGetAll）")
 	}
-	var todos []Todo // 型のスライス（リスト）を宣言する
-	db.Order("created_at desc").Find(&todos) // created_at カラム（作成日時）の降順で並べ替える & Todoテーブルから全てのレコードを取得
-	db.Close() // DBを閉じる
-	return todos // 取得したTodoを返す
+	var todos []Todo
+	db.Order("created_at desc").Find(&todos)
+	defer db.Close()
+	return todos
 }
 
-// DBひとつ取得
 func dbGetOne(id int) Todo {
 	db, err := gorm.Open("sqlite3", "test.sqlite3")
 	if err != nil {
 		panic("データベース開けず！（dbGetOne）")
 	}
-	var todo Todo // Todo型の変数を宣言
-	db.First(&todo, id) // データベースのTodoテーブルから、指定された id を持つ最初のレコードを取得
-	db.Close() // DBを閉じる
-	return todo // 取得したTodoを返す
+	var todo Todo
+	db.First(&todo, id)
+	defer db.Close()
+	return todo
 }
 
-// UPDATE
 func dbUpdate(id int, text string, status string) {
-	db, err := gorm.Open("sqlite3","test.sqlite")
+	db, err := gorm.Open("sqlite3", "test.sqlite3")
 	if err != nil {
-		panic("データベース開けず！(dbUpdate)")
+		panic("データベース開けず！（dbUpdate）")
 	}
-	var todo Todo // Todo型の変数を宣言
-	db.First(&todo, id) // データベースのTodoテーブルから、指定された id を持つ最初のレコードを取得
-	todo.Text = text // 中身を入れる
-	todo.States = status // 中身を入れる
-	db.Save(&todo) // DBの中身を保存する
-	db.Close()
+	var todo Todo
+	db.First(&todo, id)
+	todo.Text = text
+	todo.Status = status
+	db.Save(&todo)
+	defer db.Close()
 }
 
-// DELETE
-func dbDelete(id int){
-	db, err := gorm.Open("sqlite3","test.sqlite3")
+func dbDelete(id int) {
+	db, err := gorm.Open("sqlite3", "test.sqlite3")
 	if err != nil {
-		panic("データベース開けず！(dbDelete)")
+		panic("データベース開けず！（dbDelete）")
 	}
 	var todo Todo
 	db.First(&todo, id)
 	db.Delete(&todo)
-	db.Close()
-}
-
+	defer db.Close()
 }
