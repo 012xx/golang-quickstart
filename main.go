@@ -1,6 +1,9 @@
 package main
 
 import (
+	"github.com/gin-gonic/gin"
+	"strconv"
+
 	_ "github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm"
@@ -13,6 +16,18 @@ type Todo struct {
 	Text   string
 	States string
 }
+
+func main() {
+	router := gin.Default()
+	router.LoadHTMLGlob("template/*.html")
+
+	dbInit()
+
+	// Index
+	router.GET("/")
+}
+
+// test
 
 // DB初期化
 func dbInit() {
